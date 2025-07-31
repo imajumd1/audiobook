@@ -7,6 +7,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioRef, setAudioRef] = useState(null)
 
   // Computed values
   const characterCount = text.length
@@ -65,6 +67,21 @@ function App() {
     }
   }
 
+  // Play preview function
+  const playPreview = () => {
+    if (!result?.filename) return
+
+    if (audioRef) {
+      if (isPlaying) {
+        audioRef.pause()
+        setIsPlaying(false)
+      } else {
+        audioRef.play()
+        setIsPlaying(true)
+      }
+    }
+  }
+
   // Download audio function
   const downloadAudio = () => {
     if (!result?.downloadUrl) return
@@ -76,6 +93,16 @@ function App() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  // Audio event handlers
+  const handleAudioEnded = () => {
+    setIsPlaying(false)
+  }
+
+  const handleAudioError = () => {
+    setIsPlaying(false)
+    console.error('Audio playback error')
   }
 
   // Format file size
@@ -234,25 +261,59 @@ function App() {
                 <h3>{result.filename}</h3>
                 <p>
                   {result.size ? formatFileSize(result.size) : 'MP3 Audio File'} • 
-                  High Quality • Ready to download
+                  High Quality • Ready to preview and download
                 </p>
               </div>
             </div>
 
+            {/* Audio Player */}
+            <div className="audio-player">
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '12px',
+                fontSize: '14px',
+                color: '#6c757d'
+              }}>
+                🎵 <strong style={{ marginLeft: '8px', color: '#212529' }}>Audio Preview</strong>
+                <span style={{ marginLeft: 'auto' }}>Use controls to play, pause, and seek</span>
+              </div>
+              <audio
+                ref={(ref) => setAudioRef(ref)}
+                onEnded={handleAudioEnded}
+                onError={handleAudioError}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                preload="metadata"
+                controls
+                style={{ width: '100%' }}
+              >
+                <source src={`/api/preview/${result.filename}`} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+
             <div className="button-group">
+              <button 
+                className={`button ${isPlaying ? 'pause' : 'play'}`}
+                onClick={playPreview}
+                style={{ flex: 1 }}
+              >
+                {isPlaying ? '⏸️ Pause' : '▶️ Quick Play'}
+              </button>
               <button 
                 className="button success"
                 onClick={downloadAudio}
                 style={{ flex: 1 }}
               >
-                ⬇️ Download Audio
+                ⬇️ Download MP3
               </button>
               <button 
                 className="button secondary"
                 onClick={clearAll}
                 style={{ flex: 1 }}
               >
-                🔄 Generate Another
+                🔄 New Audio
               </button>
             </div>
           </div>

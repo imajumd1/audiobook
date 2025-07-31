@@ -94,6 +94,65 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+// Preview endpoint - serves audio for streaming/preview
+app.get('/api/preview/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filepath = path.join(tempDir, filename);
+
+    // Security check: ensure filename is safe
+    if (!filename.match(/^audio_\d+\.mp3$/)) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    console.log(`Serving preview: ${filename}`);
+
+    // Get file stats for proper streaming
+    const stat = fs.statSync(filepath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+
+    if (range) {
+      // Handle range requests for better browser compatibility
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunksize = (end - start) + 1;
+      
+      const fileStream = fs.createReadStream(filepath, { start, end });
+      
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'no-cache'
+      });
+      
+      fileStream.pipe(res);
+    } else {
+      // Normal streaming without range
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': 'audio/mpeg',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-cache'
+      });
+      
+      fs.createReadStream(filepath).pipe(res);
+    }
+
+  } catch (error) {
+    console.error('Preview error:', error);
+    res.status(500).json({ error: 'Failed to stream audio file' });
+  }
+});
+
 // Download endpoint
 app.get('/api/download/:filename', (req, res) => {
   try {

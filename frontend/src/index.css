@@ -253,6 +253,64 @@ body {
   outline-offset: 2px;
 }
 
+/* Audio player styling */
+.audio-player {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #e9ecef;
+}
+
+.audio-player audio {
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.audio-player audio::-webkit-media-controls-panel {
+  background-color: #ffffff;
+  border-radius: 6px;
+}
+
+.audio-player audio::-webkit-media-controls-play-button,
+.audio-player audio::-webkit-media-controls-pause-button {
+  background-color: #007bff;
+  border-radius: 50%;
+}
+
+.audio-player audio::-webkit-media-controls-timeline {
+  background-color: #e9ecef;
+  border-radius: 25px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.audio-player audio::-webkit-media-controls-current-time-display,
+.audio-player audio::-webkit-media-controls-time-remaining-display {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+/* Button variations */
+.button.play {
+  background: #17a2b8;
+}
+
+.button.play:hover:not(:disabled) {
+  background: #138496;
+}
+
+.button.pause {
+  background: #ffc107;
+  color: #212529;
+}
+
+.button.pause:hover:not(:disabled) {
+  background: #e0a800;
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .card {
@@ -265,5 +323,9 @@ body {
   
   .button:focus {
     border-color: currentColor;
+  }
+  
+  .audio-player {
+    border: 2px solid #000;
   }
 }
