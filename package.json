@@ -1,0 +1,24 @@
+{
+  "name": "tts-generator",
+  "version": "1.0.0",
+  "description": "Text-to-Speech Generator with React frontend and Express backend",
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:frontend && cp -r frontend/dist/* backend/public/",
+    "start": "cd backend && npm start",
+    "clean": "rm -rf backend/node_modules frontend/node_modules backend/public frontend/dist",
+    "postinstall": "npm run install:all"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["tts", "text-to-speech", "openai", "react", "express", "audio"],
+  "author": "",
+  "license": "MIT"
+}

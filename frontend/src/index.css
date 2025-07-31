@@ -1,0 +1,269 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+  color: #212529;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Utility classes */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+}
+
+.button {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.button:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.button.success {
+  background: #28a745;
+}
+
+.button.success:hover:not(:disabled) {
+  background: #1e7e34;
+}
+
+.button.secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: #545b62;
+}
+
+/* Form elements */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 200px;
+  padding: 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.textarea::placeholder {
+  color: #6c757d;
+}
+
+/* Character counter */
+.char-counter {
+  text-align: right;
+  font-size: 14px;
+  color: #6c757d;
+  margin-top: 8px;
+}
+
+.char-counter.warning {
+  color: #ffc107;
+}
+
+.char-counter.danger {
+  color: #dc3545;
+}
+
+/* Status messages */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 4px solid;
+}
+
+.alert.success {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.alert.error {
+  background: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.alert.info {
+  background: #d1ecf1;
+  border-color: #17a2b8;
+  color: #0c5460;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Result panel */
+.result-panel {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.file-icon {
+  font-size: 24px;
+}
+
+.file-details h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.file-details p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .button-group .button {
+    width: 100%;
+  }
+  
+  .textarea {
+    min-height: 150px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Focus states for accessibility */
+.button:focus,
+.textarea:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    border: 2px solid #000;
+  }
+  
+  .button {
+    border: 2px solid transparent;
+  }
+  
+  .button:focus {
+    border-color: currentColor;
+  }
+}
