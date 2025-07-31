@@ -10,7 +10,7 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:frontend && cp -r frontend/dist/* backend/public/",
+    "build": "npm run build:frontend && mkdir -p backend/public && cp -r frontend/dist/* backend/public/",
     "start": "cd backend && npm start",
     "clean": "rm -rf backend/node_modules frontend/node_modules backend/public frontend/dist",
     "postinstall": "npm run install:all"
