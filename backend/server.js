@@ -29,10 +29,85 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Translation function
+async function translateText(text, targetLanguage) {
+  try {
+    console.log(`Translating text to ${targetLanguage}...`);
+    
+    const prompt = targetLanguage === 'bengali' 
+      ? `Translate the following English text to Bengali (Bangla). Provide only the Bengali translation without any additional text or explanations:\n\n${text}`
+      : `Translate the following English text to Hindi. Provide only the Hindi translation without any additional text or explanations:\n\n${text}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.3
+    });
+
+    const translatedText = completion.choices[0].message.content.trim();
+    console.log(`Translation successful: ${translatedText.substring(0, 100)}...`);
+    return translatedText;
+    
+  } catch (error) {
+    console.error(`Translation error for ${targetLanguage}:`, error);
+    throw new Error(`Failed to translate text to ${targetLanguage}`);
+  }
+}
+
+// Parse musical markers from text
+function parseMusicalText(text) {
+  // Remove musical markers and return clean text for TTS
+  // Users can add markers like [slow], [fast], [pause], [high], [low]
+  const cleanText = text
+    .replace(/\[slow\]/gi, ' ')
+    .replace(/\[fast\]/gi, ' ')
+    .replace(/\[pause\]/gi, ', ')
+    .replace(/\[high\]/gi, ' ')
+    .replace(/\[low\]/gi, ' ')
+    .replace(/\[normal\]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+    
+  // Extract musical hints for processing
+  const musicalHints = {
+    hasRhythm: /\[(slow|fast|pause)\]/gi.test(text),
+    hasPitch: /\[(high|low|normal)\]/gi.test(text),
+    isMusical: /\[(slow|fast|pause|high|low|normal)\]/gi.test(text)
+  };
+  
+  return { cleanText, musicalHints };
+}
+
+// Get appropriate voice based on language, type, and musical mode
+function getVoiceForLanguageAndType(language, voiceType, isMusical = false) {
+  const voiceMap = {
+    english: {
+      adult: isMusical ? 'shimmer' : 'nova',  // shimmer is more expressive for musical content
+      child: 'fable'  // Already good for musical/storytelling
+    },
+    bengali: {
+      adult: 'alloy', // Neutral voice that works well for Bengali
+      child: 'fable'  // Youthful voice for children's content
+    },
+    hindi: {
+      adult: 'alloy', // Neutral voice that works well for Hindi
+      child: 'fable'  // Youthful voice for children's content
+    }
+  };
+  
+  return voiceMap[language]?.[voiceType] || 'alloy';
+}
+
 // Generate TTS endpoint
 app.post('/api/generate', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, language = 'english', voiceType = 'adult' } = req.body;
 
     // Validate input
     if (!text || typeof text !== 'string') {
@@ -43,18 +118,37 @@ app.post('/api/generate', async (req, res) => {
       return res.status(400).json({ error: 'Text must be less than 4000 characters' });
     }
 
-    console.log(`Generating audio for ${text.length} characters...`);
+    console.log(`Generating ${language} audio (${voiceType} voice) for ${text.length} characters...`);
+
+    // Parse musical markers if present
+    const { cleanText, musicalHints } = parseMusicalText(text);
+    console.log(`Musical mode: ${musicalHints.isMusical ? 'ON' : 'OFF'}`);
+
+    // Handle translation if needed
+    let finalText = cleanText;
+    let translatedText = cleanText;
+    
+    if (language !== 'english') {
+      translatedText = await translateText(cleanText, language);
+      finalText = translatedText;
+    }
+
+    // Get appropriate voice (with musical consideration)
+    const voice = getVoiceForLanguageAndType(language, voiceType, musicalHints.isMusical);
+    console.log(`Using voice: ${voice} for ${language} ${voiceType} ${musicalHints.isMusical ? '(Musical Mode)' : ''}`);
 
     // Generate speech using OpenAI TTS
     const mp3 = await openai.audio.speech.create({
       model: 'tts-1',
-      voice: 'nova',
-      input: text.trim(),
+      voice: voice,
+      input: finalText.trim(),
+      speed: musicalHints.hasRhythm ? 0.9 : 1.0 // Slightly slower for musical content
     });
 
-    // Create unique filename
+    // Create unique filename with language and voice info
     const timestamp = Date.now();
-    const filename = `audio_${timestamp}.mp3`;
+    const musicalSuffix = musicalHints.isMusical ? '_musical' : '';
+    const filename = `audio_${language}_${voiceType}${musicalSuffix}_${timestamp}.mp3`;
     const filepath = path.join(tempDir, filename);
 
     // Convert response to buffer and save
@@ -69,6 +163,12 @@ app.post('/api/generate', async (req, res) => {
       downloadUrl: `/api/download/${filename}`,
       filename: filename,
       size: buffer.length,
+      language: language,
+      voiceType: voiceType,
+      voice: voice,
+      isMusical: musicalHints.isMusical,
+      musicalHints: musicalHints,
+      translatedText: language !== 'english' ? translatedText : undefined,
       timestamp: timestamp
     });
 
@@ -87,6 +187,13 @@ app.post('/api/generate', async (req, res) => {
       });
     }
 
+    // Handle translation errors
+    if (error.message?.includes('translate')) {
+      return res.status(500).json({
+        error: error.message
+      });
+    }
+
     res.status(500).json({ 
       error: 'Failed to generate audio. Please try again.',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -100,8 +207,8 @@ app.get('/api/preview/:filename', (req, res) => {
     const { filename } = req.params;
     const filepath = path.join(tempDir, filename);
 
-    // Security check: ensure filename is safe
-    if (!filename.match(/^audio_\d+\.mp3$/)) {
+    // Security check: ensure filename is safe (support both old and new formats including musical)
+    if (!filename.match(/^audio_(english|bengali|hindi)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
       return res.status(400).json({ error: 'Invalid filename' });
     }
 
@@ -159,8 +266,8 @@ app.get('/api/download/:filename', (req, res) => {
     const { filename } = req.params;
     const filepath = path.join(tempDir, filename);
 
-    // Security check: ensure filename is safe
-    if (!filename.match(/^audio_\d+\.mp3$/)) {
+    // Security check: ensure filename is safe (support both old and new formats including musical)
+    if (!filename.match(/^audio_(english|bengali|hindi)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
       return res.status(400).json({ error: 'Invalid filename' });
     }
 
@@ -231,6 +338,7 @@ app.listen(PORT, () => {
   console.log(`🎵 TTS Generator Backend running on port ${PORT}`);
   console.log(`📁 Temp directory: ${tempDir}`);
   console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? 'Configured' : 'MISSING'}`);
+  console.log(`🎼 Musical Mode: ENABLED`);
   
   // Clean up old files on startup
   cleanupOldFiles();
