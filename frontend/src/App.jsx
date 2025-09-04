@@ -138,7 +138,7 @@ function App() {
 
     // Create download link and trigger download
     const link = document.createElement('a')
-    link.href = `http://localhost:3001/api/download/${result.filename}`
+    link.href = `/api/download/${result.filename}`
     link.download = result.filename || 'generated-audio.mp3'
     document.body.appendChild(link)
     link.click()
@@ -690,7 +690,7 @@ function App() {
                 controls
                 style={{ width: '100%' }}
               >
-                <source src={`http://localhost:3001/api/preview/${result.filename}`} type="audio/mpeg" />
+                <source src={`/api/preview/${result.filename}`} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </div>
