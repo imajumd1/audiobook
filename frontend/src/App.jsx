@@ -150,9 +150,12 @@ function App() {
     setIsPlaying(false)
   }
 
-  const handleAudioError = () => {
+  const handleAudioError = (e) => {
     setIsPlaying(false)
-    console.error('Audio playback error')
+    console.error('Audio playback error:', e)
+    console.error('Audio src:', e.target?.src)
+    console.error('Audio networkState:', e.target?.networkState)
+    console.error('Audio readyState:', e.target?.readyState)
   }
 
   // Format file size
@@ -681,7 +684,17 @@ function App() {
                 <span style={{ marginLeft: 'auto' }}>Use controls to play, pause, and seek</span>
               </div>
               <audio
-                ref={(ref) => setAudioRef(ref)}
+                ref={(ref) => {
+                  setAudioRef(ref)
+                  if (ref) {
+                    console.log('Audio element created, src:', `/api/preview/${result.filename}`)
+                    ref.addEventListener('loadstart', () => console.log('Audio load started'))
+                    ref.addEventListener('loadedmetadata', () => console.log('Audio metadata loaded'))
+                    ref.addEventListener('loadeddata', () => console.log('Audio data loaded'))
+                    ref.addEventListener('canplay', () => console.log('Audio can play'))
+                    ref.addEventListener('error', (e) => console.log('Audio error event:', e))
+                  }
+                }}
                 onEnded={handleAudioEnded}
                 onError={handleAudioError}
                 onPlay={() => setIsPlaying(true)}

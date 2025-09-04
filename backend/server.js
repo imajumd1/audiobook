@@ -14,7 +14,12 @@ const openai = new OpenAI({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Range']
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public')); // For serving React build
 
@@ -296,7 +301,9 @@ app.get('/api/preview/:filename', (req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': 'audio/mpeg',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range'
       });
       
       fileStream.pipe(res);
@@ -306,7 +313,9 @@ app.get('/api/preview/:filename', (req, res) => {
         'Content-Length': fileSize,
         'Content-Type': 'audio/mpeg',
         'Accept-Ranges': 'bytes',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Range'
       });
       
       fs.createReadStream(filepath).pipe(res);
