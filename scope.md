@@ -21,7 +21,12 @@ A backend-focused web application that converts text input into high-quality aud
 - Accept text input via web form or API endpoint
 - Text validation and sanitization
 - Character limit enforcement (OpenAI TTS limits)
-- Support for multiple languages
+- Support for multiple languages with translation options:
+  - Hindi
+  - Bengali
+  - Mandarin
+  - Spanish
+  - French
 
 ### 2. Voice Selection
 - Multiple AI voice options from OpenAI TTS:

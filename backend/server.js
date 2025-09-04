@@ -34,9 +34,18 @@ async function translateText(text, targetLanguage) {
   try {
     console.log(`Translating text to ${targetLanguage}...`);
     
-    const prompt = targetLanguage === 'bengali' 
-      ? `Translate the following English text to Bengali (Bangla). Provide only the Bengali translation without any additional text or explanations:\n\n${text}`
-      : `Translate the following English text to Hindi. Provide only the Hindi translation without any additional text or explanations:\n\n${text}`;
+    const languagePrompts = {
+      'hindi': `Translate the following English text to Hindi. Provide only the Hindi translation without any additional text or explanations:\n\n${text}`,
+      'bengali': `Translate the following English text to Bengali (Bangla). Provide only the Bengali translation without any additional text or explanations:\n\n${text}`,
+      'mandarin': `Translate the following English text to Mandarin Chinese (Simplified). Provide only the Chinese translation without any additional text or explanations:\n\n${text}`,
+      'spanish': `Translate the following English text to Spanish. Provide only the Spanish translation without any additional text or explanations:\n\n${text}`,
+      'french': `Translate the following English text to French. Provide only the French translation without any additional text or explanations:\n\n${text}`
+    };
+
+    const prompt = languagePrompts[targetLanguage.toLowerCase()];
+    if (!prompt) {
+      throw new Error(`Unsupported language: ${targetLanguage}`);
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -91,18 +100,67 @@ function getVoiceForLanguageAndType(language, voiceType, isMusical = false) {
       adult: isMusical ? 'shimmer' : 'nova',  // shimmer is more expressive for musical content
       child: 'fable'  // Already good for musical/storytelling
     },
+    hindi: {
+      adult: 'alloy', // Neutral voice that works well for Hindi
+      child: 'fable'  // Youthful voice for children's content
+    },
     bengali: {
       adult: 'alloy', // Neutral voice that works well for Bengali
       child: 'fable'  // Youthful voice for children's content
     },
-    hindi: {
-      adult: 'alloy', // Neutral voice that works well for Hindi
+    mandarin: {
+      adult: 'alloy', // Neutral voice that works well for Mandarin
+      child: 'fable'  // Youthful voice for children's content
+    },
+    spanish: {
+      adult: 'alloy', // Neutral voice that works well for Spanish
+      child: 'fable'  // Youthful voice for children's content
+    },
+    french: {
+      adult: 'alloy', // Neutral voice that works well for French
       child: 'fable'  // Youthful voice for children's content
     }
   };
   
   return voiceMap[language]?.[voiceType] || 'alloy';
 }
+
+// Translation-only endpoint
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { text, language = 'english' } = req.body;
+
+    // Validate input
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text is required and must be a string' });
+    }
+
+    if (text.length > 4000) {
+      return res.status(400).json({ error: 'Text must be less than 4000 characters' });
+    }
+
+    console.log(`Translating text to ${language}...`);
+
+    let translatedText = text;
+    if (language !== 'english') {
+      translatedText = await translateText(text, language);
+    }
+
+    res.json({
+      success: true,
+      originalText: text,
+      translatedText: translatedText,
+      language: language
+    });
+
+  } catch (error) {
+    console.error('Translation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to translate text. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
 
 // Generate TTS endpoint
 app.post('/api/generate', async (req, res) => {
@@ -208,7 +266,7 @@ app.get('/api/preview/:filename', (req, res) => {
     const filepath = path.join(tempDir, filename);
 
     // Security check: ensure filename is safe (support both old and new formats including musical)
-    if (!filename.match(/^audio_(english|bengali|hindi)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
+    if (!filename.match(/^audio_(english|hindi|bengali|mandarin|spanish|french)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
       return res.status(400).json({ error: 'Invalid filename' });
     }
 
@@ -267,7 +325,7 @@ app.get('/api/download/:filename', (req, res) => {
     const filepath = path.join(tempDir, filename);
 
     // Security check: ensure filename is safe (support both old and new formats including musical)
-    if (!filename.match(/^audio_(english|bengali|hindi)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
+    if (!filename.match(/^audio_(english|hindi|bengali|mandarin|spanish|french)_(adult|child)(_musical)?_\d+\.mp3$/) && !filename.match(/^audio_\d+\.mp3$/)) {
       return res.status(400).json({ error: 'Invalid filename' });
     }
 

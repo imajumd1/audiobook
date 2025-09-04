@@ -8,8 +8,10 @@ function App() {
   const [voiceType, setVoiceType] = useState('adult')
   const [musicalMode, setMusicalMode] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [translating, setTranslating] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [translation, setTranslation] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioRef, setAudioRef] = useState(null)
 
@@ -26,8 +28,51 @@ function App() {
     if (result) {
       setResult(null)
     }
+    if (translation) {
+      setTranslation(null)
+    }
     if (error) {
       setError('')
+    }
+  }
+
+  // Translate text function
+  const translateText = async () => {
+    if (!isTextValid || translating || language === 'english') return
+
+    setTranslating(true)
+    setError('')
+    setTranslation(null)
+
+    try {
+      console.log(`Translating text to ${language}...`)
+      
+      const response = await axios.post('/api/translate', {
+        text: text.trim(),
+        language: language
+      }, {
+        timeout: 30000 // 30 second timeout
+      })
+
+      console.log('Translation successful:', response.data)
+      setTranslation(response.data)
+
+    } catch (err) {
+      console.error('Translation failed:', err)
+      
+      let errorMessage = 'Failed to translate text. Please try again.'
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Translation timed out. Please try again with shorter text.'
+      } else if (err.code === 'NETWORK_ERROR') {
+        errorMessage = 'Network error. Please check your connection.'
+      }
+      
+      setError(errorMessage)
+    } finally {
+      setTranslating(false)
     }
   }
 
@@ -74,26 +119,26 @@ function App() {
 
   // Play preview function
   const playPreview = () => {
-    if (!result?.filename) return
+    if (!result?.filename || !audioRef) return
 
-    if (audioRef) {
-      if (isPlaying) {
-        audioRef.pause()
+    if (isPlaying) {
+      audioRef.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.play().catch(error => {
+        console.error('Audio play failed:', error)
         setIsPlaying(false)
-      } else {
-        audioRef.play()
-        setIsPlaying(true)
-      }
+      })
     }
   }
 
   // Download audio function
   const downloadAudio = () => {
-    if (!result?.downloadUrl) return
+    if (!result?.filename) return
 
     // Create download link and trigger download
     const link = document.createElement('a')
-    link.href = result.downloadUrl
+    link.href = `http://localhost:3001/api/download/${result.filename}`
     link.download = result.filename || 'generated-audio.mp3'
     document.body.appendChild(link)
     link.click()
@@ -121,6 +166,7 @@ function App() {
   const clearAll = () => {
     setText('')
     setResult(null)
+    setTranslation(null)
     setError('')
   }
 
@@ -197,8 +243,11 @@ function App() {
           </label>
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            disabled={loading}
+            onChange={(e) => {
+              setLanguage(e.target.value)
+              setTranslation(null) // Clear translation when language changes
+            }}
+            disabled={loading || translating}
             style={{
               width: '100%',
               padding: '12px 16px',
@@ -210,16 +259,118 @@ function App() {
             }}
           >
             <option value="english">🇺🇸 English (Original Text)</option>
-            <option value="bengali">🇧🇩 Bengali (বাংলা) - Auto Translate</option>
             <option value="hindi">🇮🇳 Hindi (हिंदी) - Auto Translate</option>
+            <option value="bengali">🇧🇩 Bengali (বাংলা) - Auto Translate</option>
+            <option value="mandarin">🇨🇳 Mandarin (中文) - Auto Translate</option>
+            <option value="spanish">🇪🇸 Spanish (Español) - Auto Translate</option>
+            <option value="french">🇫🇷 French (Français) - Auto Translate</option>
           </select>
           <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '4px' }}>
             {language === 'english' ? 
               'Generate audio in English using your original text' : 
-              `Text will be automatically translated to ${language === 'bengali' ? 'Bengali' : 'Hindi'} before audio generation`
+              `Text will be automatically translated to ${language.charAt(0).toUpperCase() + language.slice(1)} before audio generation`
             }
           </div>
         </div>
+
+        {/* Translation Section */}
+        {language !== 'english' && (
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              marginBottom: '12px'
+            }}>
+              <label style={{ 
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#212529',
+                margin: 0
+              }}>
+                🔤 Translation Preview
+              </label>
+              <button
+                onClick={translateText}
+                disabled={!isTextValid || translating || loading}
+                style={{
+                  padding: '8px 16px',
+                  background: translating ? '#6c757d' : '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: translating ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {translating ? (
+                  <>
+                    <span className="spinner" style={{ width: '12px', height: '12px' }}></span>
+                    Translating...
+                  </>
+                ) : (
+                  <>
+                    🔄 Translate Text
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {translation && (
+              <div style={{
+                background: '#f8f9fa',
+                border: '1px solid #e9ecef',
+                borderRadius: '8px',
+                padding: '16px',
+                marginTop: '12px'
+              }}>
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#6c757d', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
+                }}>
+                  📝 Translated Text ({language.charAt(0).toUpperCase() + language.slice(1)}):
+                </div>
+                <div style={{
+                  background: 'white',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #dee2e6',
+                  fontFamily: language === 'mandarin' ? 'serif' : 'inherit',
+                  lineHeight: '1.6',
+                  fontSize: '14px'
+                }}>
+                  {translation.translatedText}
+                </div>
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#28a745', 
+                  marginTop: '8px',
+                  fontWeight: '500'
+                }}>
+                  ✅ Translation complete! This text will be used for audio generation.
+                </div>
+              </div>
+            )}
+            
+            {!translation && language !== 'english' && (
+              <div style={{
+                background: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '6px',
+                padding: '12px',
+                fontSize: '14px',
+                color: '#856404'
+              }}>
+                💡 Click "Translate Text" to see the translation before generating audio
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Voice Type Selection */}
         <div className="form-group" style={{ marginBottom: '20px' }}>
@@ -539,7 +690,7 @@ function App() {
                 controls
                 style={{ width: '100%' }}
               >
-                <source src={`/api/preview/${result.filename}`} type="audio/mpeg" />
+                <source src={`http://localhost:3001/api/preview/${result.filename}`} type="audio/mpeg" />
                 Your browser does not support the audio element.
               </audio>
             </div>

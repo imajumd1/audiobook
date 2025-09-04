@@ -47,6 +47,7 @@ White:           #ffffff (cards, inputs)
 │                                                             │
 │    Characters: 234 / 4000                                  │
 │                                                             │
+│    Language: English ▼                                      │
 │    Voice: Nova (Clear Female Voice) ▼                      │
 │                                                             │
 │    ┌─────────────────────┐                                 │
@@ -81,6 +82,7 @@ White:           #ffffff (cards, inputs)
 │                             │
 │  Characters: 234 / 4000     │
 │                             │
+│  Language: English ▼        │
 │  Voice: Nova ▼              │
 │                             │
 │  ┌─────────────────────────┐ │
@@ -112,6 +114,7 @@ White:           #ffffff (cards, inputs)
 │                                                             │
 │    Characters: 234 / 4000                                  │
 │                                                             │
+│    Language: English ▼                                      │
 │    Voice: Nova (Clear Female Voice) ▼                      │
 │                                                             │
 │    ┌─────────────────────┐                                 │
@@ -139,6 +142,7 @@ White:           #ffffff (cards, inputs)
 │                                                             │
 │    Characters: 234 / 4000                                  │
 │                                                             │
+│    Language: English ▼                                      │
 │    Voice: Nova (Clear Female Voice) ▼                      │
 │                                                             │
 │    ┌─────────────────────┐                                 │
@@ -174,6 +178,7 @@ White:           #ffffff (cards, inputs)
 │                                                             │
 │    Characters: 234 / 4000                                  │
 │                                                             │
+│    Language: English ▼                                      │
 │    Voice: Nova (Clear Female Voice) ▼                      │
 │                                                             │
 │    ┌─────────────────────┐                                 │
@@ -222,6 +227,16 @@ Component: CharacterCounter
 ├── Position: Below textarea, right-aligned
 ├── Styling: Small gray text
 └── Behavior: Updates real-time, warns when approaching limit
+```
+
+### Language Selector
+```
+Component: LanguageSelector
+├── Type: Dropdown/Select
+├── Default: "English"
+├── Options: English, Hindi, Bengali, Mandarin, Spanish, French
+├── Styling: Consistent with other form elements
+└── Behavior: Translates text before TTS generation
 ```
 
 ### Voice Selector (Future)
@@ -280,9 +295,10 @@ Component: ResultPanel
 ```
 Tab Order:
 1. Textarea (text input)
-2. Voice selector dropdown
-3. Generate button
-4. Result action buttons (play/download)
+2. Language selector dropdown
+3. Voice selector dropdown
+4. Generate button
+5. Result action buttons (play/download)
 ```
 
 ### Screen Reader Support
@@ -362,6 +378,7 @@ App.jsx
 ├── TextInput
 │   ├── Textarea
 │   └── CharacterCounter
+├── LanguageSelector
 ├── VoiceSelector
 ├── GenerateButton
 └── ResultPanel
@@ -374,6 +391,7 @@ App.jsx
 ```
 App State:
 - text: string
+- language: string (default: "English")
 - loading: boolean
 - error: string | null
 - result: { downloadUrl: string, filename: string } | null

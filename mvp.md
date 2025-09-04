@@ -8,20 +8,23 @@
 ### 1. Single API Endpoint Magic ✨
 ```
 POST /api/generate
-- Input: { text: "Your text here" }
+- Input: { text: "Your text here", language: "English" }
 - Output: Download URL for MP3
 - One perfect voice (OpenAI's "nova" - young, clear female voice)
-- No choices, no complexity, just magic
+- Language translation support: Hindi, Bengali, Mandarin, Spanish, French
+- No complexity, just magic
 ```
 
 ### 2. Zero-Config React Experience 🚀
 - Modern React interface with instant feedback
+- Language selection dropdown (English, Hindi, Bengali, Mandarin, Spanish, French)
 - Real-time state management
 - Automatic download triggers
 - Perfect audio quality every time
 
 ### 3. Backend Beauty 💎
 - Express API handles everything
+- Text translation before TTS generation
 - OpenAI TTS creates professional audio
 - Temporary file served via download endpoint
 - Clean up happens automatically
@@ -79,11 +82,12 @@ app.post('/generate', async (req, res) => {
 ## MVP User Journey (30 seconds total)
 
 1. **0s**: User visits homepage
-2. **5s**: Pastes text in simple textarea
-3. **7s**: Clicks "Generate Audio" button
-4. **10s**: Server calls OpenAI TTS API
-5. **25s**: MP3 generation completes
-6. **30s**: Download starts automatically
+2. **3s**: Selects language (English, Hindi, Bengali, Mandarin, Spanish, French)
+3. **5s**: Pastes text in simple textarea
+4. **7s**: Clicks "Generate Audio" button
+5. **10s**: Server translates text and calls OpenAI TTS API
+6. **25s**: MP3 generation completes
+7. **30s**: Download starts automatically
 
 ## What Makes It Feel Magical
 
@@ -125,13 +129,20 @@ app.use(express.json());
 // Single magical endpoint
 app.post('/api/generate', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, language = "English" } = req.body;
+    
+    // Translate text if not English
+    let processedText = text;
+    if (language !== "English") {
+      // Add translation logic here using OpenAI or Google Translate API
+      // processedText = await translateText(text, language);
+    }
     
     // Generate speech
     const mp3 = await openai.audio.speech.create({
       model: "tts-1",
       voice: "nova",
-      input: text,
+      input: processedText,
     });
     
     // Create unique filename
@@ -166,6 +177,7 @@ import axios from 'axios';
 
 function App() {
   const [text, setText] = useState('');
+  const [language, setLanguage] = useState('English');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -177,7 +189,8 @@ function App() {
     
     try {
       const response = await axios.post('http://localhost:3001/api/generate', {
-        text: text.trim()
+        text: text.trim(),
+        language: language
       });
       
       // Trigger download
@@ -203,6 +216,19 @@ function App() {
         placeholder="Paste your text here..."
         style={{ width: '100%', height: '200px', fontSize: '16px', padding: '15px', marginBottom: '20px' }}
       />
+      
+      <select
+        value={language}
+        onChange={(e) => setLanguage(e.target.value)}
+        style={{ width: '100%', padding: '10px', fontSize: '16px', marginBottom: '20px' }}
+      >
+        <option value="English">English</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Bengali">Bengali</option>
+        <option value="Mandarin">Mandarin</option>
+        <option value="Spanish">Spanish</option>
+        <option value="French">French</option>
+      </select>
       
       <button
         onClick={generateAudio}
@@ -277,6 +303,7 @@ export default App;
 - ❌ Advanced error messages
 - ❌ Progress bars
 - ❌ Audio preview
+- ❌ Advanced translation features (basic language support only)
 
 ### Can Add Later
 - Voice selection dropdown
@@ -339,8 +366,8 @@ PORT=3000
 
 ## The MVP Promise 🎯
 
-**"Paste any text, get professional AI audio in 30 seconds or less"**
+**"Paste any text in any supported language, get professional AI audio in 30 seconds or less"**
 
-This React + Express MVP delivers on that promise with modern UI/UX while keeping the backend complexity minimal. The React frontend provides instant feedback and smooth interactions, while the Express backend handles the OpenAI TTS magic.
+This React + Express MVP delivers on that promise with modern UI/UX while keeping the backend complexity minimal. The React frontend provides instant feedback, language selection, and smooth interactions, while the Express backend handles text translation and OpenAI TTS magic.
 
-The magic is in the simplicity - React's reactivity makes it feel instant, while the backend stays focused on one thing: perfect audio generation.
+The magic is in the simplicity - React's reactivity makes it feel instant, while the backend stays focused on two things: perfect translation and perfect audio generation.
